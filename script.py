@@ -5,6 +5,7 @@ strptime = datetime.strptime
 
 LASTSCRAP = "2022-12-10"
 TYPES = {"terrain", "appartement", "maison", "villa"}
+CATEGS = {"location", "echange", "vente"}
 URL = "https://api.ouedkniss.com:443/graphql"
 #HEADERS = {"X-Track-Id": "513a306e-d545-45bf-aedd-af1c28da3afd", "X-App-Version": "\"1.4.35\"", "Accept-Language": "fr", "Locale": "fr", "Authorization": "", "Content-Type": "application/json", "Accept": "*/*", "Sec-Ch-Ua-Mobile": "?0", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36", "X-Track-Timestamp": "1670408176", "X-Referer": "https://www.ouedkniss.com/immobilier/2", "Sec-Ch-Ua": "\";Not A Brand\";v=\"99\", \"Chromium\";v=\"94\"", "Sec-Ch-Ua-Platform": "\"Linux\"", "Origin": "https://www.ouedkniss.com", "Sec-Fetch-Site": "same-site", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "empty", "Referer": "https://www.ouedkniss.com/", "Accept-Encoding": "gzip, deflate"}
 
@@ -21,12 +22,16 @@ def getOne(id):
 	price = data["pricePreview"]*1000
 	description = data["description"]
 	space = data["specs"][0]["valueText"][0]
-	c,w,s = data["cities"][0]["name"],data["cities"][0]["region"]["name"],data["street_name"]
+	c,w,s = data["cities"][0]["name"] ,data["cities"][0]["region"]["name"],data["street_name"]
 	
 	#Image Links
-	typ=None
+	typ="appartement"
 	for t in TYPES:
-		if t in data["slug"]:typ=t
+		if t in data["slug"].lower():typ=t
+	ctg="vente"
+	for t in CATEGS:
+		if t in data["slug"].lower():ctg=t
+
 
 	links = [ media["mediaUrl"] for media in data["medias"]]
 
@@ -44,8 +49,9 @@ def getOne(id):
     "space":space,
     "phone":phone, 
     "email":email,
-    "localisation":";".join([c,w,s]),
+    "localisation":", ".join([c,w,s]),
     "type":typ,
+	"category":ctg,
 	"medialinks":";".join(links)
 	}
 	
