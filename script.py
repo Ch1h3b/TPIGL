@@ -73,15 +73,3 @@ def getAll(l=LASTSCRAP, page=1, count=60):
  			
 	
 	return all
-		
-
-
-
-
-
-
-
-
-
-
-

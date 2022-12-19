@@ -5,6 +5,7 @@ from os import environ
 from flask_jwt_extended import JWTManager
 
 
+
 api = Flask(__name__)
 api.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///project.db"
 api.config['SECRET_KEY'] = environ.get('SECRET_KEY')
@@ -17,10 +18,11 @@ from routes import *
 
 
 
-with api.app_context():
-    print("creating db :================================)")
-    db.create_all()
-#api.run()
+# with api.app_context():
+#     print("creating db :================================)")
+#     db.create_all()
+if __name__=="__main__":
+    api.run()
     
     
 

@@ -7,6 +7,7 @@ from hashlib import md5
 from flask_jwt_extended import create_access_token, unset_jwt_cookies, get_jwt_identity, jwt_required
 from json import dumps
 
+
 # ================= Annonce Routes ================= #
 def add(answer, scrapped=False):
     annonce = Annonce(
@@ -148,7 +149,7 @@ def login():
     answer = request.json
     #db.session.query()
     user = User.query.filter_by(email = answer["email"], password=md5(answer["password"].encode()).hexdigest()).first()
-    print(user)
+    
     if user is None:
         return {"msg": "Bad username or password"}
     access_token = create_access_token(identity=answer["email"])
@@ -160,6 +161,23 @@ def logout():
     unset_jwt_cookies(response)
     return response
 
+
+
+
+
+def refresh(request):
+    refresh_token = request.GET['refresh_token']
+
+    data = {
+        'refresh_token': refresh_token,
+        'client_id': settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY, # client ID
+        'client_secret': settings.SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET, # client secret
+        'grant_type': 'refresh_token'
+    }
+
+    response = requests.post('https://oauth2.googleapis.com/token', data=data)
+
+    return JsonResponse(response.json(), status=200)
 
 # =============== Messages routes ================= #
 @api.route("/sendmsg", methods=["POST"])
@@ -183,9 +201,6 @@ def getmessages():
     all = Annonce.query.filter_by(receiverid=request.json["reveiverid"])
     return { [ a.details() for a in all ] }
     
-
-
-
 
 @api.route("/")
 @jwt_required()
