@@ -17,8 +17,10 @@ def getOne(id):
 	json={"operationName": "AnnouncementGet", "query": "query AnnouncementGet($id: ID!) {\n  announcement: announcementDetails(id: $id) {\n    id\n    reference\n    title\n    slug\n    description\n    orderExternalUrl\n    createdAt: refreshedAt\n    price\n    pricePreview\n    oldPrice\n    priceType\n    exchangeType\n    priceUnit\n    hasDelivery\n    deliveryType\n    hasPhone\n    hasEmail\n    quantity\n    status\n    street_name\n    category {\n      slug\n      name\n      __typename\n    }\n    defaultMedia(size: ORIGINAL) {\n      mediaUrl\n      __typename\n    }\n    medias(size: LARGE) {\n      mediaUrl\n      mimeType\n      thumbnail\n      __typename\n    }\n    categories {\n      id\n      name\n      slug\n      __typename\n    }\n    specs {\n      specification {\n        label\n        codename\n        type\n        __typename\n      }\n      value\n      valueText\n      __typename\n    }\n    user {\n      id\n      username\n      displayName\n      avatarUrl\n      __typename\n    }\n    isFromStore\n    store {\n      id\n      name\n      slug\n      description\n      imageUrl\n      url\n      followerCount\n      announcementsCount\n      locations {\n        location {\n          address\n          region {\n            slug\n            name\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      categories {\n        name\n        slug\n        __typename\n      }\n      __typename\n    }\n    cities {\n      id\n      name\n      region {\n        id\n        name\n        slug\n        __typename\n      }\n      __typename\n    }\n    isCommentEnabled\n    noAdsense\n    variants {\n      id\n      hash\n      specifications {\n        specification {\n          codename\n          label\n          __typename\n        }\n        valueText\n        value\n        mediaUrl\n        __typename\n      }\n      price\n      oldPrice\n      quantity\n      __typename\n    }\n    showAnalytics\n    __typename\n  }\n}\n", "variables": {"id": id}}
 	data= callAPI(json)
 	data=data["data"]["announcement"]
+	
 
 	#General Informations
+	title =data["title"]
 	price = data["pricePreview"]*1000
 	description = data["description"]
 	space = data["specs"][0]["valueText"][0]
@@ -44,15 +46,17 @@ def getOne(id):
 	email = data["data"]["email"]
 
 	json = {
+	"title":title,
     "price":price,
-    "description":description,
+    "description":description.replace("\\n", "\n"),
     "space":space,
     "phone":phone, 
     "email":email,
     "localisation":", ".join([c,w,s]),
     "type":typ,
 	"category":ctg,
-	"medialinks":";".join(links)
+	"medialinks":";".join(links),
+	
 	}
 	
 	return json
@@ -66,9 +70,12 @@ def getAll(l=LASTSCRAP, page=1, count=60):
 	for one in nice:
 		createdAt = one["createdAt"]
 		id = one["id"]
+		print( "suuuuuuuuuu" + one["id"])
 		if strptime(createdAt[:10], "%Y-%m-%d")  > strptime(l, "%Y-%m-%d"):
-			all.append(getOne(id))
-			print("whda")
+			tosend=getOne(id)
+			tosend["createdAt"]=one["createdAt"][:10]
+			all.append(tosend)
+		
 			break # Remove this break for actual scrapping
  			
 	

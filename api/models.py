@@ -16,18 +16,29 @@ class Annonce(db.Model):
     email =  db.Column(db.String)
     localisation = db.Column(db.String)
     
+    date = db.Column(db.DateTime)
     scraped = db.Column(db.Boolean, default=False)
     def details(self):
-        return {"id":self.id, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space,
-        "phone":self.phone, "email":self.email, "localisation":self.localisation, "type":self.type, "userId":self.userId}
+        return {
+        "id":self.id, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space,
+        "phone":self.phone, "email":self.email, "localisation":self.localisation, "type":self.type, "userId":self.userId,
+        "date":self.date
+        }
     def brief(self):
         return {"id":self.id, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space, "localisation":self.localisation}
+    def __eq__(self, other):
+        return self.date == other.date 
+
+    def __lt__(self, other):
+        return self.date < other.date
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String)
     password = db.Column(db.String)
-    favoris = db.Column(db.ARRAY(db.Integer))
+    favourite = db.Column(db.String, default="")
+    name = db.Column(db.String)
+    lname = db.Column(db.String)
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -35,8 +46,9 @@ class Message(db.Model):
     receiverid = db.Column(db.Integer)
     annonceid = db.Column(db.Integer)
     content = db.Column(db.String)
+    date = db.Column(db.DateTime)
     def details(self):
-        return {"senderid":self.senderid, "content":self.content, "annonceid":self.annonceid}
+        return {"senderid":self.senderid, "content":self.content, "annonceid":self.annonceid, "date":self.date}
 
 
 
