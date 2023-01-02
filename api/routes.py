@@ -5,19 +5,18 @@ from models import *
 from script import getAll
 from datetime import datetime
 from hashlib import md5
-from flask.wrappers import  Response
 from flask_jwt_extended import create_access_token, unset_jwt_cookies, get_jwt_identity, jwt_required
-import json
-import requests
-from authlib.integrations.flask_client import OAuth
-
-CLIENT_ID=environ.get("CLIENT_ID")
-import google_auth_oauthlib
+from pip._vendor import cachecontrol
 from google_auth_oauthlib.flow import Flow
 from google.oauth2 import id_token
-import google.auth.transport.requests
-from pip._vendor import cachecontrol
 
+import google.auth.transport.requests
+import google_auth_oauthlib
+import requests
+
+
+
+CLIENT_ID=environ.get("CLIENT_ID")
 SCOPES = [
         "https://www.googleapis.com/auth/userinfo.profile",
         "https://www.googleapis.com/auth/userinfo.email",
@@ -31,67 +30,24 @@ flow = Flow.from_client_secrets_file(
     SCOPES,
     redirect_uri="http://localhost:5000/oauth2callback")
 
-# oauth = OAuth(api)
+
 
 @api.route('/')
 def index():
     return "You are logged out <a href='/auth/google'><button>Login</button></a>"
 
-# @api.route('/google')
-# def google():
-#     GOOGLE_CLIENT_ID = environ.get('CLIENT_ID')
-#     GOOGLE_CLIENT_SECRET = environ.get('CLIENT_SECRET')
-     
-#     CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
-#     oauth.register(
-#         name='google',
-#         client_id=GOOGLE_CLIENT_ID,
-#         client_secret=GOOGLE_CLIENT_SECRET,
-#         server_metadata_url=CONF_URL,
-#         client_kwargs={
-#             'scope': 'openid email profile'
-#         }
-#     )
-     
-#     redirect_uri = url_for('google_auth', _external=True)
-#     return oauth.google.authorize_redirect(redirect_uri)
- 
-# @api.route('/google/auth')
-# def google_auth():
-#     token = oauth.google.authorize_access_token()
-#     # user = oauth.google.parse_id_token(token)
-    # userinfo = token['userinfo']
-#     return redirect('/')
 
 # ================= User Routes ================= #
 
-@api.route("/register", methods = ["POST"])
-def register():
-    answer = request.json
-    # we can do an email verification here
-    if len(User.query.filter_by(email = answer["email"]).all()) > 0:
-        return {"ok":0, "msg":"Email already in use!"}
-    
+@api.route("/isAdmin", methods=["GET"])
+@jwt_required()
+def isAdmin():
+    id = get_jwt_identity()
+    if id == api.config["admin"]:
+        return {"admin":1}
+    else:
+        return {"admin":0}
 
-    
-    newuser = User(
-        email = answer["email"],
-        password = md5(answer["password"].encode()).hexdigest(),
-    )
-
-    db.session.add(newuser)
-    db.session.commit()
-    return {"ok":1}
-
-@api.route("/login", methods=["POST"])
-def login():
-    answer = request.json
-    user = User.query.filter_by(email = answer["email"], password=md5(answer["password"].encode()).hexdigest()).first()
-    
-    if user is None:
-        return {"ok":0,"msg": "Bad username or password"}
-    access_token = create_access_token(identity=user.id)
-    return access_token
 
 @api.route("/logout", methods=["POST"])
 def logout():
@@ -99,8 +55,6 @@ def logout():
     session.clear()
     unset_jwt_cookies(response)
     return response
-
-
 
 
 
@@ -157,7 +111,7 @@ def oauth2callback():
   
   session["google_id"] = userid
   del idinfo['aud']
-#   session['credentials'] = credentials_to_dict(credentials)
+
   if len(User.query.filter_by(email = idinfo.get("email")).all()) == 0:
     newuser = User(
         name=idinfo.get("name"),
@@ -171,7 +125,7 @@ def oauth2callback():
   access_token = create_access_token(identity=userid)
   
   return redirect(f"http://localhost:3000/?jwt={access_token}")
-#   return json.dumps({"user":idinfo,"message":"ok"})
+
 
 # ================= Annonce Routes ================= #
 def add(answer, scraped=False, date=datetime.now()):
@@ -238,11 +192,14 @@ def getDetail():
  
 
 @api.route("/scrap", methods=["GET"])
+@jwt_required()
 def scrap():
-    lastscrap = open(".lastscrap", 'r').read() # Need to handle last scrapping in a better way x)
+    if get_jwt_identity() != api.config["admin"]:
+        return {"ok":0, "msg": "Not an admin"}
+    lastscrap = api.config["last_scrap"]
     c=0
     try:
-        #result = getAll(l=lastscrap) add it
+        #result = getAll(l=lastscrap) # this one is correct one
         result = getAll()
     except:
         return {"ok":0}
@@ -348,8 +305,13 @@ def unsetfav():
     db.session.commit()
     return {"ok":1} 
 
+# =================== Static ====================== #
+@api.route("/wilaya", methods=["GET"])
+def wilaya():    
+    return eval(open("new_wilaya.json").read())
 
-# ================ Tests_only ===================== #
+
+# ================ Tests_only, should be removed in deplyment ===================== #
 @api.route("/")
 @jwt_required()
 def test():
@@ -377,11 +339,32 @@ def allusers():
         "messages": [m.details() for m in Message.query.all() ],
     }
 
+@api.route("/register", methods = ["POST"])
+def register():
+    answer = request.json
+    # we can do an email verification here
+    if len(User.query.filter_by(email = answer["email"]).all()) > 0:
+        return {"ok":0, "msg":"Email already in use!"}
+    
 
-def credentials_to_dict(credentials):
-  return {'token': credentials.token,
-          'refresh_token': credentials.refresh_token,
-          'token_uri': credentials.token_uri,
-          'client_id': credentials.client_id,
-          'client_secret': credentials.client_secret,
-          'scopes': credentials.scopes}
+    
+    newuser = User(
+        email = answer["email"],
+        name = answer["name"]
+    )
+
+    db.session.add(newuser)
+    db.session.commit()
+    return {"ok":1}
+
+@api.route("/login", methods=["POST"])
+def login():
+    answer = request.json
+    user = User.query.filter_by(email = answer["email"]).first()
+    
+    if user is None:
+        return {"ok":0,"msg": "Bad username or password"}
+    access_token = create_access_token(identity=user.id)
+    return access_token
+
+
