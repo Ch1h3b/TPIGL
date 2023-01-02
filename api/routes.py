@@ -1,4 +1,5 @@
 from flask import request,redirect,session,url_for
+from sqlalchemy import or_
 from app import api, db
 from os import environ
 from models import *
@@ -280,7 +281,7 @@ def getmessages():
 @jwt_required()
 def getfav():
     user = User.query.filter_by(id = get_jwt_identity()).first()
-    fav = user.favourite.split(",") 
+    fav = [Annonce.query.filter_by(id=int(i)).first().brief() for i in user.favourite.split(",") ]
     return {"data":fav}
 
 
