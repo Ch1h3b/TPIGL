@@ -35,10 +35,9 @@ class Annonce(db.Model):
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String)
-    password = db.Column(db.String)
     favourite = db.Column(db.String, default="")
     name = db.Column(db.String)
-    lname = db.Column(db.String)
+    picture = db.Column(db.String,default="")
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
