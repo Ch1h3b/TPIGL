@@ -25,7 +25,7 @@ class Annonce(db.Model):
         "date":self.date
         }
     def brief(self):
-        return {"id":self.id, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space, "localisation":self.localisation}
+        return {"id":self.id,"userId":self.userId, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space, "type":self.type, "localisation":self.localisation, "date":self.date}
     def __eq__(self, other):
         return self.date == other.date 
 
@@ -36,7 +36,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String)
     name = db.Column(db.String)
-    favourite = db.Column(db.String, default="")
+    favourite = db.Column(db.String, default=",")
     picture = db.Column(db.String,default="")
 
 class Message(db.Model):

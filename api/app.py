@@ -16,7 +16,7 @@ api.config["Access-Control-Allow-Headers"]="Content-Type"
 
 jwt = JWTManager(api)
 db = SQLAlchemy(api)
-CORS(api,resources={r"/*": {"origins": "*"}})
+CORS(api)
 
 from routes import *
 
