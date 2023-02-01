@@ -1,22 +1,18 @@
-from flask import request,redirect,session,url_for
-from sqlalchemy import or_
+from flask import request,redirect,session,url_for, send_from_directory
 from app import api, db
-from os import environ
+from os import environ, path, getcwd
 from models import *
 from script import getAll
 from datetime import datetime,timedelta
-from hashlib import md5
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
-
-import requests
-
-import google_auth_oauthlib
+from pip._vendor import cachecontrol
 from google_auth_oauthlib.flow import Flow
 from google.oauth2 import id_token
-
 import google.auth.transport.requests
-import google_auth_oauthlib
 import requests
+import google_auth_oauthlib
+import random
+import string
 
 
 CLIENT_ID=environ.get("CLIENT_ID")
@@ -104,7 +100,7 @@ def oauth2callback():
     
   access_token = create_access_token(identity=userId,expires_delta=timedelta(days=7))
   return redirect(f"http://localhost:3000/?jwt={access_token}")
-
+#   return json.dumps({"user":idinfo,"message":"ok"})
 
 # ================= Annonce Routes ================= #
 def add(answer, scraped=False, date=datetime.now()):
@@ -123,17 +119,20 @@ def add(answer, scraped=False, date=datetime.now()):
 
         phone =  answer["phone"],
         email =  answer["email"],
-        
+        livesin = answer["livesin"],
+
         localisation = answer["localisation"],
+        pics= answer["pics"],
         scraped = scraped,
         date=date,
+        
     )
     try:
         db.session.add(annonce)
         db.session.commit()
         return {"ok":1}
     except Exception as e:
-        return {"ok":0, "msg":str(e)}
+        return annonce
 
 
 @api.route("/getMine", methods=["GET"])
@@ -142,17 +141,46 @@ def getMesAnn():
     myAnnonces = [a.brief() for a in  Annonce.query.filter_by(userId=get_jwt_identity()).all()]
     return {"data":myAnnonces}
 
+@api.route("/images/<pic>")
+def getimage(pic):
+    return send_from_directory(api.config["UPLOAD_FOLDER"], pic)
+
+
+def upload(images):
+    list = []
+    for image in images:
+        if not (image.filename.endswith("jpg") or image.filename.endswith("png")):continue
+        rand = ''.join(random.choices(string.ascii_uppercase + string.digits, k=7)) + ".{ext}".format(ext=image.filename.split(".")[-1])
+        image.save(path.join(getcwd(),api.config["UPLOAD_FOLDER"] ,rand))
+        list.append(rand)
+    print(list)
+    return ",".join(list) if len(list)>0 else ","
+
 @api.route("/new", methods=["POST"])
 @jwt_required()
 def new():
-    print("khra")
-    print(request.form.keys())
-    print(request.files.getlist('images'))
-    # answer = request.json
-    answer ={}
-    answer["userId"]= get_jwt_identity()
-    return {"ok":answer}
-    # return add(answer=answer)
+    
+    r=request.form
+    print(r.keys())
+    
+    answer={
+        "title":r.get("title"),
+        "description":r.get("description"),
+        "type":r.get("type"),
+        "category":r.get("category"),
+        "price":r.get("price"),
+        "space":r.get("space"),
+        "phone":r.get("phone"),
+        "localisation": ",".join([r.get("wilaya"),r.get("commune"),r.get("addresse")]),
+        "userId":get_jwt_identity(),
+        "pics":upload(request.files.getlist('images')),
+        "email":User.query.filter_by(id=get_jwt_identity()).first().email,
+        "livesin":r.get("myaddresse")
+    }
+    
+    
+    print(answer)
+    return add(answer=answer).details()
 
 
 @api.route("/delete", methods=["POST"])
@@ -184,22 +212,22 @@ def getDetail():
 @api.route("/scrap", methods=["GET"])
 @jwt_required()
 def scrap():
-    if get_jwt_identity() != api.config["admin"]:
-        return {"ok":0, "msg": "Not an admin"}
-    lastscrap = api.config["last_scrap"]
-    c=0
+    if get_jwt_identity() != api.config["adminid"]:
+        return {"ok":0, "msg":"Tresspassing detected"}
+    lastscrap = open(".lastscrap", 'r').read() # Need to handle last scrapping in a better way x)
+    added=[]
     try:
-        #result = getAll(l=lastscrap) # this one is correct one
+        #result = getAll(l=lastscrap) add it
         result = getAll()
     except:
         return {"ok":0}
     for entry in result:
         entry["userId"]=-1 # Ouedkniss User Id
         a=add(entry, True, datetime.strptime(entry["createdAt"], "%Y-%m-%d") )
-        c+=a["ok"]
+        added.append(a)
         
-    open(".lastscrap", "w").write(str(datetime.now())[:10])
-    return {"ok":1,"added":c}
+    api.config["last_scrap"] = str(datetime.now())[:10]
+    return {"ok":1, "data":[a.details for a in added]}
 
 # ================= Search && filters ================ #
 
@@ -290,8 +318,7 @@ def unsetfav():
 def wilaya():    
     return eval(open("new_wilayas.json").read())
 
-
-# ================ Tests_only, should be removed in deplyment ===================== #
+# ================ Tests_only ===================== #
 @api.route("/")
 @jwt_required()
 def test():
@@ -306,11 +333,9 @@ def test():
 @api.route("/dropdb")
 @jwt_required()
 def drop():
-    user = User.query.filter_by(id = get_jwt_identity()).first()
-    user.favourite =","
-    db.session.commit()
-    # Message.query.delete()
-    # Annonce.query.delete()
+    User.query.delete()
+    Message.query.delete()
+    Annonce.query.delete()
     return {"ok":1}
 
 @api.route("/all", methods=["GET"])
@@ -321,26 +346,9 @@ def allusers():
         "messages": [m.details() for m in Message.query.all() ],
     }
 
-@api.route("/register", methods = ["POST"])
-def register():
-    answer = request.json
-    # we can do an email verification here
-    if len(User.query.filter_by(email = answer["email"]).all()) > 0:
-        return {"ok":0, "msg":"Email already in use!"}
-    
 
-    
-    newuser = User(
-        email = answer["email"],
-        name = answer["name"]
-    )
-
-    db.session.add(newuser)
-    db.session.commit()
-    return {"ok":1}
-
-@api.route("/login", methods=["POST"])
-def login():
+@api.route("/logintest", methods=["POST"])
+def logintest():
     answer = request.json
     user = User.query.filter_by(email = answer["email"]).first()
     

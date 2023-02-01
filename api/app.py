@@ -5,18 +5,20 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from os import environ
 
-api = Flask(__name__)
-api.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///project.db"
-api.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-db = SQLAlchemy(api)
-CORS(api)
+environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-api.config['SECRET_KEY'] = environ.get('SECRET_KEY')
-api.config["JWT_SECRET_KEY"] = "aaaa"  # Change this!
-api.config["last_scrap"] = "2022-12-15" # probably this too
+
+api = Flask(__name__)
+
 api.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///project.db"
 api.config['Access-Control-Allow-Origin'] = '*'
 api.config["Access-Control-Allow-Headers"]="Content-Type"
+api.config["UPLOAD_FOLDER"]="images"
+# to change:
+api.config['SECRET_KEY'] = "secret_key" 
+api.config["JWT_SECRET_KEY"] = "secret_key_jwt"  
+api.config["last_scrap"] = "2022-12-15" 
+api.config["adminid"] = 1
 
 jwt = JWTManager(api)
 db = SQLAlchemy(api)

@@ -18,14 +18,17 @@ class Annonce(db.Model):
     
     date = db.Column(db.DateTime)
     scraped = db.Column(db.Boolean, default=False)
+
+    pics = db.Column(db.String,default=",")
+    livesin = db.Column(db.String)
     def details(self):
         return {
         "id":self.id, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space,
         "phone":self.phone, "email":self.email, "localisation":self.localisation, "type":self.type, "userId":self.userId,
-        "date":self.date
+        "date":self.date, "pics":["/images/" + i for i in self.pics.split(",")], "livesin":self.livesin
         }
     def brief(self):
-        return {"id":self.id,"userId":self.userId, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space, "type":self.type, "localisation":self.localisation, "date":self.date}
+        return {"id":self.id,"userId":self.userId, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space, "type":self.type, "localisation":self.localisation, "date":self.date, "pics":["/images/" + i for i in self.pics]}
     def __eq__(self, other):
         return self.date == other.date 
 
@@ -48,7 +51,7 @@ class Message(db.Model):
     content = db.Column(db.String)
     date = db.Column(db.DateTime)
     def details(self):
-        return {"senderid":self.senderid, "content":self.content, "annonceid":self.annonceid, "date":self.date}
+        return {"senderid":self.senderid, "receiverid":self.receiverid, "content":self.content, "annonceid":self.annonceid, "date":self.date}
 
 
 
