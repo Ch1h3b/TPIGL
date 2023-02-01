@@ -37,6 +37,7 @@ class User(db.Model):
     email = db.Column(db.String)
     favourite = db.Column(db.String, default=",")
     name = db.Column(db.String)
+    favourite = db.Column(db.String, default="")
     picture = db.Column(db.String,default="")
 
 class Message(db.Model):
