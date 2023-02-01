@@ -27,8 +27,12 @@ elif sys.argv[1]=="login":
     print(r.text)
     open(".tmpauth","w").write(r.text)
 elif sys.argv[1]=="logout":
+<<<<<<< HEAD
+    r=requests.post("http://127.0.0.1:5000/logout")
+=======
     r=requests.post(URL + "/logout")
     open(".tmpauth","w").write("")
+>>>>>>> master
     print(r.text)
 elif sys.argv[1]=="new":
     r=requests.post(URL + "/new", json=random_json, headers=h)

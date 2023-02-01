@@ -6,6 +6,10 @@ from flask_cors import CORS
 from os import environ
 
 api = Flask(__name__)
+api.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///project.db"
+api.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+db = SQLAlchemy(api)
+CORS(api)
 
 api.config['SECRET_KEY'] = environ.get('SECRET_KEY')
 api.config["JWT_SECRET_KEY"] = "aaaa"  # Change this!
