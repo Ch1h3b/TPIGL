@@ -141,9 +141,14 @@ def getMesAnn():
 @api.route("/new", methods=["POST"])
 @jwt_required()
 def new():
-    answer = request.json
+    print("khra")
+    print(request.form.keys())
+    print(request.files.getlist('images'))
+    # answer = request.json
+    answer ={}
     answer["userId"]= get_jwt_identity()
-    return add(answer=answer)
+    return {"ok":answer}
+    # return add(answer=answer)
 
 
 @api.route("/delete", methods=["POST"])
@@ -197,24 +202,6 @@ def search():
     res = []
     for A in Annonce.query.all():
         if any(keyword.lower() in (A.description+ " " + A.title).lower().split(' ') for keyword in keywords):
-            res.append(A)
-    res = sorted(res)
-    return {"data":[r.brief() for r in res]}
-
-
-
-# The react app should keep the keywords and send them again
-@api.route("/filter", methods=["GET"])
-def filter():
-    rjson = request.json
-    keywords = rjson["keywords"].split(" ")
-    res = []
-    for A in Annonce.query.all():
-        if any(keyword.lower() in (A.description + A.title).lower() for keyword in keywords)\
-            and rjson["type"].lower() in A.typ.lower()\
-            and rjson["wilaya"].lower() in A.localisation.lower()\
-            and rjson["commune"].lower() in A.localisation.lower()\
-            and datetime.strptime(rjson["fdate"], "%Y-%m-%d") <= A.date  <= datetime.strptime(rjson["ldate"], "%Y-%m-%d") : #change this
             res.append(A)
     res = sorted(res)
     return {"data":[r.brief() for r in res]}
