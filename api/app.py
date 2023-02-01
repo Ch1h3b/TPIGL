@@ -7,7 +7,8 @@ from os import environ
 
 api = Flask(__name__)
 api.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///project.db"
-api.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+api.config['SECRET_KEY'] = environ.get('SECRET_KEY')
+environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 db = SQLAlchemy(api)
 CORS(api)
 
@@ -19,8 +20,6 @@ api.config['Access-Control-Allow-Origin'] = '*'
 api.config["Access-Control-Allow-Headers"]="Content-Type"
 
 jwt = JWTManager(api)
-db = SQLAlchemy(api)
-CORS(api,resources={r"/*": {"origins": "*"}})
 
 from routes import *
 
