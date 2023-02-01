@@ -3,20 +3,19 @@ from app import api, db
 from os import environ
 from models import *
 from script import getAll
-from datetime import datetime
+from datetime import datetime,timedelta
 from hashlib import md5
-from flask.wrappers import  Response
-from flask_jwt_extended import create_access_token, unset_jwt_cookies, get_jwt_identity, jwt_required
-import json
-import requests
-from authlib.integrations.flask_client import OAuth
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
 
-CLIENT_ID=environ.get("CLIENT_ID")
+import requests
+
 import google_auth_oauthlib
 from google_auth_oauthlib.flow import Flow
 from google.oauth2 import id_token
 import google.auth.transport.requests
 from pip._vendor import cachecontrol
+
+CLIENT_ID=environ.get("CLIENT_ID")
 
 SCOPES = [
         "https://www.googleapis.com/auth/userinfo.profile",
@@ -31,92 +30,25 @@ flow = Flow.from_client_secrets_file(
     SCOPES,
     redirect_uri="http://localhost:5000/oauth2callback")
 
-# oauth = OAuth(api)
-
-@api.route('/')
-def index():
-    return "You are logged out <a href='/auth/google'><button>Login</button></a>"
-
-# @api.route('/google')
-# def google():
-#     GOOGLE_CLIENT_ID = environ.get('CLIENT_ID')
-#     GOOGLE_CLIENT_SECRET = environ.get('CLIENT_SECRET')
-     
-#     CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
-#     oauth.register(
-#         name='google',
-#         client_id=GOOGLE_CLIENT_ID,
-#         client_secret=GOOGLE_CLIENT_SECRET,
-#         server_metadata_url=CONF_URL,
-#         client_kwargs={
-#             'scope': 'openid email profile'
-#         }
-#     )
-     
-#     redirect_uri = url_for('google_auth', _external=True)
-#     return oauth.google.authorize_redirect(redirect_uri)
- 
-# @api.route('/google/auth')
-# def google_auth():
-#     token = oauth.google.authorize_access_token()
-#     # user = oauth.google.parse_id_token(token)
-    # userinfo = token['userinfo']
-#     return redirect('/')
 
 # ================= User Routes ================= #
 
-@api.route("/register", methods = ["POST"])
-def register():
-    answer = request.json
-    # we can do an email verification here
-    if len(User.query.filter_by(email = answer["email"]).all()) > 0:
-        return {"ok":0, "msg":"Email already in use!"}
-    
-
-    
-    newuser = User(
-        email = answer["email"],
-        password = md5(answer["password"].encode()).hexdigest(),
-    )
-
-    db.session.add(newuser)
-    db.session.commit()
-    return {"ok":1}
-
-@api.route("/login", methods=["POST"])
+@api.route("/login", methods=["GET"])
+@jwt_required()
 def login():
-    answer = request.json
-    user = User.query.filter_by(email = answer["email"], password=md5(answer["password"].encode()).hexdigest()).first()
-    
-    if user is None:
-        return {"ok":0,"msg": "Bad username or password"}
-    access_token = create_access_token(identity=user.id)
-    return access_token
+    if request.headers.get("Authorization"):
+        jwtr = request.headers.get("Authorization").split(" ")[1]
 
-@api.route("/logout", methods=["POST"])
+    user = User.query.filter_by(id = get_jwt_identity()).first()
+    return {"name":user.name,"picture":user.picture,"token":jwtr}
+
+
+@api.route("/logout", methods=["GET"])
+@jwt_required()
 def logout():
     response = {"ok":1,"msg":"logout successful"}
     session.clear()
-    unset_jwt_cookies(response)
     return response
-
-
-
-
-
-def refresh(request):
-    refresh_token = request.GET['refresh_token']
-
-    data = {
-        'refresh_token': refresh_token,
-        'client_id': settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY, # client ID
-        'client_secret': settings.SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET, # client secret
-        'grant_type': 'refresh_token'
-    }
-
-    response = requests.post('https://oauth2.googleapis.com/token', data=data)
-
-    return JsonResponse(response.json(), status=200)
 
 
 @api.route("/auth/google")
@@ -127,7 +59,6 @@ def loginauth():
     access_type='offline',
     include_granted_scopes='true')
     session['state'] = state
-    print(state)
     url_for("oauth2callback")
     return redirect(authorization_url)
      
@@ -153,23 +84,21 @@ def oauth2callback():
   token_request = google.auth.transport.requests.Request(session=cached_session)
   
   idinfo = id_token.verify_oauth2_token(id_token= credentials._id_token,request=token_request ,audience= CLIENT_ID)
-  userid = idinfo['sub']
   
-  session["google_id"] = userid
+
   del idinfo['aud']
-#   session['credentials'] = credentials_to_dict(credentials)
   if len(User.query.filter_by(email = idinfo.get("email")).all()) == 0:
     newuser = User(
         name=idinfo.get("name"),
         email = idinfo.get("email"),
         picture = idinfo.get("picture"),
     ) 
-
+    
     db.session.add(newuser)
     db.session.commit()
-  
-  access_token = create_access_token(identity=userid)
-  
+  userId = User.query.filter_by(email = idinfo.get("email")).first().id
+    
+  access_token = create_access_token(identity=userId,expires_delta=timedelta(days=7))
   return redirect(f"http://localhost:3000/?jwt={access_token}")
 #   return json.dumps({"user":idinfo,"message":"ok"})
 
@@ -203,6 +132,12 @@ def add(answer, scraped=False, date=datetime.now()):
         return {"ok":0, "msg":str(e)}
 
 
+@api.route("/getMine", methods=["GET"])
+@jwt_required()
+def getMesAnn():
+    myAnnonces = [a.brief() for a in  Annonce.query.filter_by(userId=get_jwt_identity()).all()]
+    return {"data":myAnnonces}
+
 @api.route("/new", methods=["POST"])
 @jwt_required()
 def new():
@@ -222,7 +157,7 @@ def delete():
         try:
             db.session.delete(concerned)
             db.session.commit()
-            return {"ok":1}
+            return {"ok":1,"id":request.json["id"]}
         except:
             pass
     return {"ok":0}
@@ -256,12 +191,12 @@ def scrap():
 
 # ================= Search && filters ================ #
 
-@api.route("/search", methods=["GET"])
+@api.route("/search", methods=["POST"])
 def search():
-    keywords = request.json["keywords"].split(" ")
+    keywords = request.json["keywords"]
     res = []
     for A in Annonce.query.all():
-        if any(keyword.lower() in (A.description + A.title).lower() for keyword in keywords):
+        if any(keyword.lower() in (A.description+ " " + A.title).lower().split(' ') for keyword in keywords):
             res.append(A)
     res = sorted(res)
     return {"data":[r.brief() for r in res]}
@@ -291,7 +226,7 @@ def filter():
 # =============== Messages routes ================= #
 
 @api.route("/sendmsg", methods=["POST"])
-# @jwt_required()
+@jwt_required()
 def sendmsg():
     try:
         answer = request.json
@@ -312,7 +247,7 @@ def sendmsg():
 @jwt_required()
 def getmessages():
     all = Message.query.filter_by(receiverid=get_jwt_identity()).all()
-    print(all)
+
     return { "data": [ m.details() for m in all ] }
     
 
@@ -323,20 +258,28 @@ def getmessages():
 @jwt_required()
 def getfav():
     user = User.query.filter_by(id = get_jwt_identity()).first()
-    fav = user.favourite.split(",") 
-    return {"data":fav}
-
+    if (user):
+        fav=[]
+        if (user.favourite!=","):
+            fav = [Annonce.query.filter_by(id=int(i)).first().brief() for i in user.favourite.split(",") ]
+            return {"data":fav}
+    return {"ok":0,"data":fav}
 
 @api.route("/setfav", methods=["POST"])
 @jwt_required()
 def setfav():
     user = User.query.filter_by(id = get_jwt_identity()).first()
-    fav = user.favourite.split(","); fav.remove("")
-    if request.json["id"] not in fav:fav.append(str(request.json["id"]))
-    user.favourite = ",".join(fav)
-    
-    db.session.commit()
-    return {"ok":1}
+    if user.favourite==",":fav=[]
+    else:
+        fav = user.favourite.split(",")
+        if "" in fav:fav.remove("")
+    if request.json["id"] not in fav:
+        fav.append(str(request.json["id"]))
+        user.favourite = ",".join(fav)
+        db.session.commit()
+        fav = Annonce.query.filter_by(id=int(request.json["id"])).first().brief()
+        return {"ok":1,"fav":fav}
+    return {"ok":0,"fav":{}}
 
 @api.route("/unsetfav", methods=["POST"])
 @jwt_required()
@@ -346,8 +289,12 @@ def unsetfav():
     fav.remove(str(request.json["id"]))
     user.favourite = ",".join(fav)
     db.session.commit()
-    return {"ok":1} 
+    return {"ok":1,"id":request.json["id"]} 
 
+# =================== Static ====================== #
+@api.route("/wilaya", methods=["GET"])
+def wilaya():    
+    return eval(open("new_wilayas.json").read())
 
 # ================ Tests_only ===================== #
 @api.route("/")
@@ -362,17 +309,19 @@ def test():
     return r
 
 @api.route("/dropdb")
+@jwt_required()
 def drop():
-    User.query.delete()
-    Message.query.delete()
-    Annonce.query.delete()
+    user = User.query.filter_by(id = get_jwt_identity()).first()
+    user.favourite =","
+    db.session.commit()
+    # Message.query.delete()
+    # Annonce.query.delete()
     return {"ok":1}
 
 @api.route("/all", methods=["GET"])
 def allusers():
-    print("hello")
     return {
-        "users": [(u.email,u.name,u.picture) for u in User.query.all()],
+        "users": [(u.email,u.name,u.picture,u.favourite,u.id) for u in User.query.all()],
         "annonces": [a.details() for a in Annonce.query.all()],
         "messages": [m.details() for m in Message.query.all() ],
     }

@@ -9,7 +9,7 @@ api = Flask(__name__)
 api.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///project.db"
 api.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 db = SQLAlchemy(api)
-CORS(api,resources={r"/*": {"origins": "*"}})
+CORS(api)
 
 api.config['Access-Control-Allow-Origin'] = '*'
 api.config["Access-Control-Allow-Headers"]="Content-Type"

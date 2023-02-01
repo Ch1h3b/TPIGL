@@ -26,7 +26,7 @@ elif sys.argv[1]=="login":
     r=requests.post("http://127.0.0.1:5000/login", json=authj)
     print(r.text)
     open(".tmpauth","w").write(r.text)
-elif sys.argv[1]=="login":
+elif sys.argv[1]=="logout":
     r=requests.post("http://127.0.0.1:5000/logout")
     print(r.text)
 elif sys.argv[1]=="new":
