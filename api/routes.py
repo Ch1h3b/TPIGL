@@ -130,9 +130,9 @@ def add(answer, scraped=False, date=datetime.now()):
     try:
         db.session.add(annonce)
         db.session.commit()
-        return {"ok":1}
-    except Exception as e:
         return annonce
+    except Exception as e:
+        return {"ok":0}
 
 
 @api.route("/getMine", methods=["GET"])
@@ -153,7 +153,7 @@ def upload(images):
         rand = ''.join(random.choices(string.ascii_uppercase + string.digits, k=7)) + ".{ext}".format(ext=image.filename.split(".")[-1])
         image.save(path.join(getcwd(),api.config["UPLOAD_FOLDER"] ,rand))
         list.append(rand)
-    print(list)
+    
     return ",".join(list) if len(list)>0 else ","
 
 @api.route("/new", methods=["POST"])
