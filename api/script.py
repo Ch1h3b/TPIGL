@@ -55,7 +55,7 @@ def getOne(id):
     "localisation":", ".join([c,w,s]),
     "type":typ,
 	"category":ctg,
-	"medialinks":";".join(links),
+	"pics":",".join(links),
 	
 	}
 	

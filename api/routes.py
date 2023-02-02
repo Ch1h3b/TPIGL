@@ -119,7 +119,7 @@ def add(answer, scraped=False, date=datetime.now()):
 
         phone =  answer["phone"],
         email =  answer["email"],
-        livesin = answer["livesin"],
+        # livesin = answer["livesin"],
 
         localisation = answer["localisation"],
         pics= answer["pics"],
@@ -130,9 +130,10 @@ def add(answer, scraped=False, date=datetime.now()):
     try:
         db.session.add(annonce)
         db.session.commit()
-        return {"ok":1}
-    except Exception as e:
         return annonce
+        
+    except Exception as e:
+        return {"ok":0}
 
 
 @api.route("/getMine", methods=["GET"])
@@ -207,14 +208,21 @@ def getDetail():
         return {"ok":0}
     
     return detailed.details()
- 
+# admin routes
+@api.route("/getAll", methods=["GET"])
+# @jwt_required()
+def getAllAnnonces():
+    allAnnonces = Annonce.query.all()
+    
+    
+    return [a.brief() for a in allAnnonces] 
 
 @api.route("/scrap", methods=["GET"])
 @jwt_required()
 def scrap():
     if get_jwt_identity() != api.config["adminid"]:
         return {"ok":0, "msg":"Tresspassing detected"}
-    lastscrap = open(".lastscrap", 'r').read() # Need to handle last scrapping in a better way x)
+    # lastscrap = open(".lastscrap", 'r').read() # Need to handle last scrapping in a better way x)
     added=[]
     try:
         #result = getAll(l=lastscrap) add it
@@ -227,7 +235,8 @@ def scrap():
         added.append(a)
         
     api.config["last_scrap"] = str(datetime.now())[:10]
-    return {"ok":1, "data":[a.details for a in added]}
+    print("55")
+    return {"ok":1, "data":[a.brief() for a in added]}
 
 # ================= Search && filters ================ #
 
@@ -331,11 +340,11 @@ def test():
     return r
 
 @api.route("/dropdb")
-@jwt_required()
 def drop():
-    User.query.delete()
-    Message.query.delete()
+    # User.query.delete()
+    # Message.query.delete()
     Annonce.query.delete()
+    db.session.commit()
     return {"ok":1}
 
 @api.route("/all", methods=["GET"])

@@ -22,13 +22,15 @@ class Annonce(db.Model):
     pics = db.Column(db.String,default=",")
     livesin = db.Column(db.String)
     def details(self):
+        it="" if self.scraped else "/images/" 
         return {
         "id":self.id, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space,
         "phone":self.phone, "email":self.email, "localisation":self.localisation, "type":self.type, "userId":self.userId,
-        "date":self.date, "pics":["/images/" + i for i in self.pics.split(",")], "livesin":self.livesin
+        "date":self.date, "pics":[it + i for i in self.pics.split(",")], "livesin":self.livesin
         }
     def brief(self):
-        return {"id":self.id,"userId":self.userId, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space, "type":self.type, "localisation":self.localisation, "date":self.date, "pics":["/images/" + i for i in self.pics]}
+        it="" if self.scraped else "/images/" 
+        return {"id":self.id,"userId":self.userId, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space, "type":self.type, "localisation":self.localisation, "date":self.date, "pics":[it + i for i in self.pics.split(',')]}
     def __eq__(self, other):
         return self.date == other.date 
 
