@@ -100,7 +100,7 @@ def oauth2callback():
     
   access_token = create_access_token(identity=userId,expires_delta=timedelta(days=7))
   return redirect(f"http://localhost:3000/?jwt={access_token}")
-#   return json.dumps({"user":idinfo,"message":"ok"})
+
 
 # ================= Annonce Routes ================= #
 def add(answer, scraped=False, date=datetime.now()):
@@ -127,6 +127,7 @@ def add(answer, scraped=False, date=datetime.now()):
         date=date,
         
     )
+    
     try:
         db.session.add(annonce)
         db.session.commit()
@@ -210,24 +211,26 @@ def getDetail():
  
 
 @api.route("/scrap", methods=["GET"])
-@jwt_required()
+#@jwt_required()
 def scrap():
-    if get_jwt_identity() != api.config["adminid"]:
-        return {"ok":0, "msg":"Tresspassing detected"}
-    lastscrap = open(".lastscrap", 'r').read() # Need to handle last scrapping in a better way x)
+    #if get_jwt_identity() != api.config["adminid"]:return {"ok":0, "msg":"Tresspassing detected"}
+    lastscrap = api.config["last_scrap"]
     added=[]
     try:
-        #result = getAll(l=lastscrap) add it
-        result = getAll()
+        result = getAll(l=lastscrap) # add it
+        #result = getAll()
     except:
         return {"ok":0}
     for entry in result:
+        
         entry["userId"]=-1 # Ouedkniss User Id
+        entry["livesin"]=""
+        
         a=add(entry, True, datetime.strptime(entry["createdAt"], "%Y-%m-%d") )
         added.append(a)
-        
+    
     api.config["last_scrap"] = str(datetime.now())[:10]
-    return {"ok":1, "data":[a.details for a in added]}
+    return {"ok":1, "data":[a.details() for a in added]}
 
 # ================= Search && filters ================ #
 
@@ -331,11 +334,11 @@ def test():
     return r
 
 @api.route("/dropdb")
-@jwt_required()
 def drop():
     User.query.delete()
     Message.query.delete()
     Annonce.query.delete()
+    db.session.commit()
     return {"ok":1}
 
 @api.route("/all", methods=["GET"])

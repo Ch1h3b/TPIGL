@@ -55,28 +55,29 @@ def getOne(id):
     "localisation":", ".join([c,w,s]),
     "type":typ,
 	"category":ctg,
-	"medialinks":";".join(links),
+	"pics":",".join(links),
 	
 	}
 	
 	return json
 
-def getAll(l=LASTSCRAP, page=1, count=60):
+def getAll(l=LASTSCRAP, page=1, count=60, total=1):
 	print("Scrapping now... Operation may take time")
 	json={"operationName": "SearchQueryWithoutFilters", "query": "query SearchQueryWithoutFilters($q: String, $filter: SearchFilterInput, $mediaSize: MediaSize = MEDIUM) {\n  search(q: $q, filter: $filter) {\n    announcements {\n      data {\n        ...AnnouncementContent\n        smallDescription {\n          valueText\n          __typename\n        }\n        noAdsense\n        __typename\n      }\n      paginatorInfo {\n        lastPage\n        hasMorePages\n        __typename\n      }\n      __typename\n    }\n    active {\n      category {\n        id\n        name\n        delivery\n        slug\n        __typename\n      }\n      count\n      __typename\n    }\n    suggested {\n      category {\n        id\n        name\n        slug\n        __typename\n      }\n      count\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment AnnouncementContent on Announcement {\n  id\n  title\n  slug\n  createdAt: refreshedAt\n  isFromStore\n  isCommentEnabled\n  userReaction {\n    isBookmarked\n    isLiked\n    __typename\n  }\n  hasDelivery\n  deliveryType\n  likeCount\n  description\n  status\n  cities {\n    id\n    name\n    slug\n    region {\n      id\n      name\n      slug\n      __typename\n    }\n    __typename\n  }\n  store {\n    id\n    name\n    slug\n    imageUrl\n    __typename\n  }\n  user {\n    id\n    __typename\n  }\n  defaultMedia(size: $mediaSize) {\n    mediaUrl\n    __typename\n  }\n  price\n  pricePreview\n  priceUnit\n  oldPrice\n  priceType\n  exchangeType\n  __typename\n}\n", "variables": {"filter": {"categorySlug": "immobilier", "cityIds": [], "connected": False, "count": count, "delivery": None, "exchange": False, "fields": [], "hasPictures": False, "hasPrice": False, "origin": None, "page": page, "priceRange": [None, None], "priceUnit": None, "regionIds": []}, "mediaSize": "MEDIUM", "q": None}}
 	answer = callAPI(json)	
 	nice = answer["data"]["search"]["announcements"]["data"]
 	all = []
+	t = 0
 	for one in nice:
 		createdAt = one["createdAt"]
 		id = one["id"]
-		print( "suuuuuuuuuu" + one["id"])
+		
 		if strptime(createdAt[:10], "%Y-%m-%d")  > strptime(l, "%Y-%m-%d"):
 			tosend=getOne(id)
 			tosend["createdAt"]=one["createdAt"][:10]
 			all.append(tosend)
-		
-			break # Remove this break for actual scrapping
+			t+=1
+			if t==total:break # Remove this break for actual scrapping
  			
 	
 	return all
