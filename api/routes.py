@@ -100,7 +100,7 @@ def oauth2callback():
     
   access_token = create_access_token(identity=userId,expires_delta=timedelta(days=7))
   return redirect(f"http://localhost:3000/?jwt={access_token}")
-#   return json.dumps({"user":idinfo,"message":"ok"})
+
 
 # ================= Annonce Routes ================= #
 def add(answer, scraped=False, date=datetime.now()):
@@ -127,11 +127,11 @@ def add(answer, scraped=False, date=datetime.now()):
         date=date,
         
     )
+    
     try:
         db.session.add(annonce)
         db.session.commit()
         return annonce
-        
     except Exception as e:
         return {"ok":0}
 
@@ -154,7 +154,7 @@ def upload(images):
         rand = ''.join(random.choices(string.ascii_uppercase + string.digits, k=7)) + ".{ext}".format(ext=image.filename.split(".")[-1])
         image.save(path.join(getcwd(),api.config["UPLOAD_FOLDER"] ,rand))
         list.append(rand)
-    print(list)
+    
     return ",".join(list) if len(list)>0 else ","
 
 @api.route("/new", methods=["POST"])
@@ -220,22 +220,24 @@ def getAllAnnonces():
 @api.route("/scrap", methods=["GET"])
 @jwt_required()
 def scrap():
-    if get_jwt_identity() != api.config["adminid"]:
-        return {"ok":0, "msg":"Tresspassing detected"}
-    # lastscrap = open(".lastscrap", 'r').read() # Need to handle last scrapping in a better way x)
+    if get_jwt_identity() != api.config["adminid"]:return {"ok":0, "msg":"Tresspassing detected"}
+    lastscrap = api.config["last_scrap"]
     added=[]
     try:
-        #result = getAll(l=lastscrap) add it
-        result = getAll()
+        result = getAll(l=lastscrap) # add it
+        #result = getAll()
     except:
         return {"ok":0}
     for entry in result:
+        
         entry["userId"]=-1 # Ouedkniss User Id
+        entry["livesin"]=""
+        
         a=add(entry, True, datetime.strptime(entry["createdAt"], "%Y-%m-%d") )
         added.append(a)
-        
+        print(a)
+    
     api.config["last_scrap"] = str(datetime.now())[:10]
-    print("55")
     return {"ok":1, "data":[a.brief() for a in added]}
 
 # ================= Search && filters ================ #
@@ -365,5 +367,7 @@ def logintest():
         return {"ok":0,"msg": "Bad username or password"}
     access_token = create_access_token(identity=user.id)
     return access_token
+
+
 
 

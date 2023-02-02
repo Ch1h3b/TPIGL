@@ -20,17 +20,24 @@ class Annonce(db.Model):
     scraped = db.Column(db.Boolean, default=False)
 
     pics = db.Column(db.String,default=",")
-    livesin = db.Column(db.String)
+    livesin = db.Column(db.String, default="")
     def details(self):
-        it="" if self.scraped else "/images/" 
+        if self.userId != -1:
+            p = ["/images/" + i for i in self.pics.split(",")]
+        else:
+            p = self.pics.split(",")
         return {
         "id":self.id, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space,
         "phone":self.phone, "email":self.email, "localisation":self.localisation, "type":self.type, "userId":self.userId,
-        "date":self.date, "pics":[it + i for i in self.pics.split(",")], "livesin":self.livesin
+        "date":self.date, "pics":p, "livesin":self.livesin
         }
     def brief(self):
-        it="" if self.scraped else "/images/" 
-        return {"id":self.id,"userId":self.userId, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space, "type":self.type, "localisation":self.localisation, "date":self.date, "pics":[it + i for i in self.pics.split(',')]}
+        if self.userId != -1:
+            p = ["/images/" + i for i in self.pics.split(",")]
+        else:
+            p = self.pics.split(",")
+            if (p[0]==""): p=[]
+        return {"id":self.id,"userId":self.userId, "title":self.title, "category":self.category,  "price":self.price, "description":self.description, "space":self.space, "type":self.type, "localisation":self.localisation, "date":self.date, "pics":p}
     def __eq__(self, other):
         return self.date == other.date 
 
