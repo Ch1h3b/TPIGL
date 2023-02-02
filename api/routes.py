@@ -211,9 +211,9 @@ def getDetail():
  
 
 @api.route("/scrap", methods=["GET"])
-#@jwt_required()
+@jwt_required()
 def scrap():
-    #if get_jwt_identity() != api.config["adminid"]:return {"ok":0, "msg":"Tresspassing detected"}
+    if get_jwt_identity() != api.config["adminid"]:return {"ok":0, "msg":"Tresspassing detected"}
     lastscrap = api.config["last_scrap"]
     added=[]
     try:
@@ -359,5 +359,7 @@ def logintest():
         return {"ok":0,"msg": "Bad username or password"}
     access_token = create_access_token(identity=user.id)
     return access_token
+
+
 
 

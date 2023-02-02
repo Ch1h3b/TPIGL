@@ -32,7 +32,7 @@ class Annonce(db.Model):
         "date":self.date, "pics":p, "livesin":self.livesin
         }
     def brief(self):
-        if self.id != -1:
+        if self.userId != -1:
             p = ["/images/" + i for i in self.pics.split(",")]
         else:
             p = self.pics.split(",")
