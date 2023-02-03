@@ -119,7 +119,7 @@ def add(answer, scraped=False, date=datetime.now()):
 
         phone =  answer["phone"],
         email =  answer["email"],
-        # livesin = answer["livesin"],
+        livesin = answer["livesin"],
 
         localisation = answer["localisation"],
         pics= answer["pics"],
@@ -204,19 +204,18 @@ def delete():
 @jwt_required()
 def getDetail(id):
     print(id)
-    # id = request.json["id"]
     detailed = Annonce.query.filter_by(id=id).first()
     if detailed is None:
         return {"ok":0}
     
     return detailed.details()
-# admin routes
+
+# ================= Admin ================ #
 @api.route("/getAll", methods=["GET"])
 @jwt_required()
 def getAllAnnonces():
+    if get_jwt_identity() != api.config["adminid"]:return {"ok":0, "msg":"Tresspassing detected"}
     allAnnonces = Annonce.query.all()
-    
-    
     return [a.brief() for a in allAnnonces] 
 
 @api.route("/scrap", methods=["GET"])
@@ -225,9 +224,10 @@ def scrap():
     if get_jwt_identity() != api.config["adminid"]:return {"ok":0, "msg":"Tresspassing detected"}
     lastscrap = api.config["last_scrap"]
     added=[]
+    
     try:
         result = getAll(l=lastscrap) # add it
-        #result = getAll()
+        
     except:
         return {"ok":0}
     for entry in result:
@@ -369,7 +369,9 @@ def logintest():
         return {"ok":0,"msg": "Bad username or password"}
     access_token = create_access_token(identity=user.id)
     return access_token
-
-
-
-
+@api.route("/addmanual")
+def manual():
+    m = Message(senderid=1, receiverid=3, annonceid=4, content="mistara", date=__import__("datetime").datetime.now())
+    db.session.add(m)
+    db.session.commit()
+    return {"ok":1}

@@ -17,7 +17,7 @@ api.config["UPLOAD_FOLDER"]="images"
 # to change:
 api.config['SECRET_KEY'] = "secret_key" 
 api.config["JWT_SECRET_KEY"] = "secret_key_jwt"  
-api.config["last_scrap"] = "2022-12-15" 
+api.config["last_scrap"] = "2023-01-01" 
 api.config["adminid"] = 2
 
 jwt = JWTManager(api)
