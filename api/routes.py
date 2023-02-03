@@ -200,9 +200,11 @@ def delete():
             pass
     return {"ok":0}
 
-@api.route("/getai", methods=["GET"])
-def getDetail():
-    id = request.json["id"]
+@api.route("/getai/<int:id>", methods=["GET"])
+@jwt_required()
+def getDetail(id):
+    print(id)
+    # id = request.json["id"]
     detailed = Annonce.query.filter_by(id=id).first()
     if detailed is None:
         return {"ok":0}
@@ -210,7 +212,7 @@ def getDetail():
     return detailed.details()
 # admin routes
 @api.route("/getAll", methods=["GET"])
-# @jwt_required()
+@jwt_required()
 def getAllAnnonces():
     allAnnonces = Annonce.query.all()
     
@@ -243,6 +245,7 @@ def scrap():
 # ================= Search && filters ================ #
 
 @api.route("/search", methods=["POST"])
+@jwt_required()
 def search():
     keywords = request.json["keywords"]
     res = []
@@ -280,7 +283,6 @@ def sendmsg():
 @jwt_required()
 def getmessages():
     all = Message.query.filter_by(receiverid=get_jwt_identity()).all()
-
     return { "data": [ m.details() for m in all ] }
     
 
