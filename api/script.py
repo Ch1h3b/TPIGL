@@ -1,3 +1,4 @@
+from re import sub
 from json import loads
 from requests import post
 from datetime import datetime
@@ -23,7 +24,8 @@ def getOne(id):
 	title =data["title"]
 	price = data["pricePreview"]*1000
 	description = data["description"]
-	space = data["specs"][0]["valueText"][0]
+	print(data["specs"][0]["valueText"][0])
+	space = sub("[^0-9]", "", data["specs"][0]["valueText"][0]) 
 	c,w,s = data["cities"][0]["name"] ,data["cities"][0]["region"]["name"],data["street_name"]
 	
 	#Image Links
@@ -65,7 +67,9 @@ def getAll(l=LASTSCRAP, page=1, count=60, total=1):
 	print("Scrapping now... Operation may take time")
 	json={"operationName": "SearchQueryWithoutFilters", "query": "query SearchQueryWithoutFilters($q: String, $filter: SearchFilterInput, $mediaSize: MediaSize = MEDIUM) {\n  search(q: $q, filter: $filter) {\n    announcements {\n      data {\n        ...AnnouncementContent\n        smallDescription {\n          valueText\n          __typename\n        }\n        noAdsense\n        __typename\n      }\n      paginatorInfo {\n        lastPage\n        hasMorePages\n        __typename\n      }\n      __typename\n    }\n    active {\n      category {\n        id\n        name\n        delivery\n        slug\n        __typename\n      }\n      count\n      __typename\n    }\n    suggested {\n      category {\n        id\n        name\n        slug\n        __typename\n      }\n      count\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment AnnouncementContent on Announcement {\n  id\n  title\n  slug\n  createdAt: refreshedAt\n  isFromStore\n  isCommentEnabled\n  userReaction {\n    isBookmarked\n    isLiked\n    __typename\n  }\n  hasDelivery\n  deliveryType\n  likeCount\n  description\n  status\n  cities {\n    id\n    name\n    slug\n    region {\n      id\n      name\n      slug\n      __typename\n    }\n    __typename\n  }\n  store {\n    id\n    name\n    slug\n    imageUrl\n    __typename\n  }\n  user {\n    id\n    __typename\n  }\n  defaultMedia(size: $mediaSize) {\n    mediaUrl\n    __typename\n  }\n  price\n  pricePreview\n  priceUnit\n  oldPrice\n  priceType\n  exchangeType\n  __typename\n}\n", "variables": {"filter": {"categorySlug": "immobilier", "cityIds": [], "connected": False, "count": count, "delivery": None, "exchange": False, "fields": [], "hasPictures": False, "hasPrice": False, "origin": None, "page": page, "priceRange": [None, None], "priceUnit": None, "regionIds": []}, "mediaSize": "MEDIUM", "q": None}}
 	answer = callAPI(json)	
+	
 	nice = answer["data"]["search"]["announcements"]["data"]
+	
 	all = []
 	t = 0
 	for one in nice:
