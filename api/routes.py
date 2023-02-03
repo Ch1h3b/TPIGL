@@ -369,7 +369,9 @@ def logintest():
         return {"ok":0,"msg": "Bad username or password"}
     access_token = create_access_token(identity=user.id)
     return access_token
-
-
-
-
+@api.route("/addmanual")
+def manual():
+    m = Message(senderid=1, receiverid=3, annonceid=4, content="mistara", date=__import__("datetime").datetime.now())
+    db.session.add(m)
+    db.session.commit()
+    return {"ok":1}

@@ -77,3 +77,5 @@ elif sys.argv[1]=="getf":
     print(requests.get(URL + "/getfav", headers=h).text)
 elif sys.argv[1]=="scrap":
     print(requests.get(URL + "/scrap").text)
+elif sys.argv[1]=="addmanual":
+    print(requests.get(URL + "/addmanual").text)
