@@ -226,7 +226,7 @@ def scrap():
     added=[]
     
     try:
-        result = getAll(l=lastscrap) # add it
+        result = getAll(l=lastscrap, total=api.config["scrap_limit"]) # add it
         
     except:
         return {"ok":0}

@@ -18,7 +18,8 @@ api.config["UPLOAD_FOLDER"]="images"
 api.config['SECRET_KEY'] = "secret_key" 
 api.config["JWT_SECRET_KEY"] = "secret_key_jwt"  
 api.config["last_scrap"] = "2023-01-01" 
-api.config["adminid"] = 2
+api.config["scrap_limit"] = 2 
+api.config["adminid"] = 1
 
 jwt = JWTManager(api)
 db = SQLAlchemy(api)
