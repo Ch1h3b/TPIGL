@@ -28,8 +28,8 @@ npm start
 
 ## Note:
 
-Le premier utilisateur inscript est par default l'administrateur.
-Pour visualiser les fonctionalité d'un simple utilisateur s'inscrire avec une second compte, ou alors modifier .env!
+Le deuxieme utilisateur inscrit est par default l'administrateur.
+Pour visualiser les fonctionalités d'un administrateur s'inscrire avec un second compte, ou alors modifier .env!
 
-Une section de app.py (voir commentaire) doit etre modifié selon les preferences de l'administrateur.
+Une section de app.py (voir commentaire) doit étre modifiée selon les preferences de l'administrateur.
 
