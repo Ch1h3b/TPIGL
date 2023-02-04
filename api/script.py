@@ -8,7 +8,7 @@ LASTSCRAP = "2022-12-10"
 TYPES = {"terrain", "appartement", "maison", "villa"}
 CATEGS = {"location", "echange", "vente"}
 URL = "https://api.ouedkniss.com:443/graphql"
-#HEADERS = {"X-Track-Id": "513a306e-d545-45bf-aedd-af1c28da3afd", "X-App-Version": "\"1.4.35\"", "Accept-Language": "fr", "Locale": "fr", "Authorization": "", "Content-Type": "application/json", "Accept": "*/*", "Sec-Ch-Ua-Mobile": "?0", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36", "X-Track-Timestamp": "1670408176", "X-Referer": "https://www.ouedkniss.com/immobilier/2", "Sec-Ch-Ua": "\";Not A Brand\";v=\"99\", \"Chromium\";v=\"94\"", "Sec-Ch-Ua-Platform": "\"Linux\"", "Origin": "https://www.ouedkniss.com", "Sec-Fetch-Site": "same-site", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "empty", "Referer": "https://www.ouedkniss.com/", "Accept-Encoding": "gzip, deflate"}
+
 
 def callAPI(jsonon):
 	return loads(post(URL, json=jsonon).text)
@@ -24,7 +24,7 @@ def getOne(id):
 	title =data["title"]
 	price = data["pricePreview"]*1000
 	description = data["description"]
-	print(data["specs"][0]["valueText"][0])
+	
 	space = sub("[^0-9]", "", data["specs"][0]["valueText"][0]) 
 	c,w,s = data["cities"][0]["name"] ,data["cities"][0]["region"]["name"],data["street_name"]
 	

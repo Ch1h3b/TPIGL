@@ -14,12 +14,12 @@ api.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///project.db"
 api.config['Access-Control-Allow-Origin'] = '*'
 api.config["Access-Control-Allow-Headers"]="Content-Type"
 api.config["UPLOAD_FOLDER"]="images"
-# to change:
+# Change these depending on your preferences
 api.config['SECRET_KEY'] = "secret_key" 
 api.config["JWT_SECRET_KEY"] = "secret_key_jwt"  
 api.config["last_scrap"] = "2023-01-01" 
-api.config["scrap_limit"] = 2 
-api.config["adminid"] = 1
+api.config["scrap_limit"] = 2  # Limite des annonces a scrapper!
+api.config["adminid"] = 1 # L'id de ladmin
 
 jwt = JWTManager(api)
 db = SQLAlchemy(api)

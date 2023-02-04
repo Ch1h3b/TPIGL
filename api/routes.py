@@ -68,7 +68,7 @@ def oauth2callback():
   if not session['state'] == request.args['state']:
         ConnectionAbortedError(500)
   state = session['state']
-  print(state)
+  
 
   flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
       CLIENT_SECRETS_FILE, scopes=SCOPES,state=state)
@@ -162,7 +162,7 @@ def upload(images):
 def new():
     
     r=request.form
-    print(r.keys())
+    
     
     answer={
         "title":r.get("title"),
@@ -180,7 +180,7 @@ def new():
     }
     
     
-    print(answer)
+    
     return add(answer=answer).details()
 
 
@@ -203,7 +203,7 @@ def delete():
 @api.route("/getai/<int:id>", methods=["GET"])
 @jwt_required()
 def getDetail(id):
-    print(id)
+    
     detailed = Annonce.query.filter_by(id=id).first()
     if detailed is None:
         return {"ok":0}
@@ -237,7 +237,7 @@ def scrap():
         
         a=add(entry, True, datetime.strptime(entry["createdAt"], "%Y-%m-%d") )
         added.append(a)
-        print(a)
+        
     
     api.config["last_scrap"] = str(datetime.now())[:10]
     return {"ok":1, "data":[a.brief() for a in added]}
@@ -331,7 +331,7 @@ def unsetfav():
 def wilaya():    
     return eval(open("new_wilayas.json").read())
 
-# ================ Tests_only ===================== #
+# ================ Tests_only, should be removed on production ===================== #
 @api.route("/")
 @jwt_required()
 def test():
@@ -345,8 +345,8 @@ def test():
 
 @api.route("/dropdb")
 def drop():
-    # User.query.delete()
-    # Message.query.delete()
+    User.query.delete()
+    Message.query.delete()
     Annonce.query.delete()
     db.session.commit()
     return {"ok":1}
@@ -369,6 +369,8 @@ def logintest():
         return {"ok":0,"msg": "Bad username or password"}
     access_token = create_access_token(identity=user.id)
     return access_token
+
+
 @api.route("/addmanual")
 def manual():
     m = Message(senderid=1, receiverid=3, annonceid=4, content="mistara", date=__import__("datetime").datetime.now())
